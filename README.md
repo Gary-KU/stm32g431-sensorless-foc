@@ -128,16 +128,20 @@ a serial host protocol and a Python GUI.
 
 ```
 .
-├── Core/                     应用层（CubeMX 生成 + 手写）
+├── App/                       ★ 手写的 FOC 应用层（与 CubeMX 完全隔离）
 │   ├── Inc/
 │   │   ├── foc_hw.h          硬件抽象：PWM/ADC/三角函数
 │   │   ├── foc_math.h        Clarke/Park/SVPWM/角度运算（含主机测试桩）
 │   │   ├── foc_serial.h      上位机串口协议
 │   │   ├── motor_foc.h       状态机与运行时可调全局量
+│   │   ├── user_foc.h        参考工程遗留的接口
 │   │   ├── user_motor.h      eSMO / 磁链观测器 / PLL / HFI
 │   │   ├── user_mtr.h        电机参数（★ 主要调参入口）
 │   │   └── user_vars.h       控制用数据结构
 │   └── Src/                  对应实现
+├── Core/                     ⚙ CubeMX 生成，**请不要手改**
+│   ├── Inc/                  main.h / stm32g4xx_hal_conf.h / adc.h / gpio.h ...
+│   └── Src/                  main.c / stm32g4xx_it.c / system_stm32g4xx.c ...
 ├── Drivers/                  STM32 HAL + CMSIS（未用的 DSP/NN/RTOS2 已移除）
 ├── MDK-ARM/                  Keil MDK 工程（Mymotor.uvprojx）
 ├── host/                     上位机（Python + tkinter + matplotlib）
@@ -148,10 +152,14 @@ a serial host protocol and a Python GUI.
 │   └── test_foc_math.c
 ├── docs/
 │   ├── FOC_BRINGUP.md        ★ 完整调试记录（踩坑、参数、数据、结论）
-│   └── OPEN_LOOP_TEST.md     开环调试记录
+│   └── OPEN_LOOP_TEST.md     开环调试记录（历史阶段）
 ├── Mymotor.ioc               STM32CubeMX 工程
 └── README.md
 ```
+
+> **为什么应用代码不放在 `Core/`**：`Core/` 由 STM32CubeMX 生成与维护，
+> 重新生成代码时可能被覆盖。应用逻辑独立放在 `App/`，与生成代码彻底隔离；
+> `main.c` 里的 `USER CODE BEGIN/END` 段是唯一需保留的手写部分。
 
 ---
 
@@ -190,7 +198,7 @@ pyocd flash --pack <Keil.STM32G4xx_DFP.x.x.x.pack> \
 
 ```bash
 gcc -std=c99 -Wall -Wextra -Werror -I Core/Inc \
-    Core/Src/foc_hw.c Core/Src/foc_math.c tests/test_foc_math.c -lm -o test_foc
+    App/Src/foc_hw.c App/Src/foc_math.c tests/test_foc_math.c -lm -o test_foc
 ./test_foc
 ```
 

@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32G431xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32G4xx_HAL_Driver/Inc;../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32G4xx/Include;../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../Core/Inc;../App/Inc;../Drivers/STM32G4xx_HAL_Driver/Inc;../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32G4xx/Include;../Drivers/CMSIS/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -418,39 +418,50 @@
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32g4xx_hal_msp.c</FilePath>
             </File>
+
+
+
+
+
+
+          </Files>
+        </Group>
+                <Group>
+          <GroupName>Application/User/FOC</GroupName>
+          <Files>
             <File>
               <FileName>foc_hw.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../Core/Src/foc_hw.c</FilePath>
+              <FilePath>../App/Src/foc_hw.c</FilePath>
             </File>
             <File>
               <FileName>foc_math.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../Core/Src/foc_math.c</FilePath>
-            </File>
-            <File>
-              <FileName>user_vars.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Core/Src/user_vars.c</FilePath>
-            </File>
-            <File>
-              <FileName>user_motor.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Core/Src/user_motor.c</FilePath>
-            </File>
-            <File>
-              <FileName>motor_foc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Core/Src/motor_foc.c</FilePath>
+              <FilePath>../App/Src/foc_math.c</FilePath>
             </File>
             <File>
               <FileName>foc_serial.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../Core/Src/foc_serial.c</FilePath>
+              <FilePath>../App/Src/foc_serial.c</FilePath>
+            </File>
+            <File>
+              <FileName>motor_foc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../App/Src/motor_foc.c</FilePath>
+            </File>
+            <File>
+              <FileName>user_motor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../App/Src/user_motor.c</FilePath>
+            </File>
+            <File>
+              <FileName>user_vars.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../App/Src/user_vars.c</FilePath>
             </File>
           </Files>
         </Group>
-        <Group>
+<Group>
           <GroupName>Drivers/STM32G4xx_HAL_Driver</GroupName>
           <Files>
             <File>
