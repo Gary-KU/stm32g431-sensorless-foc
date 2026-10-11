@@ -203,6 +203,7 @@ class App(tk.Tk):
         self._port = None
         self._rx_since = time.time()
         self._warned_nodata = False
+        self._last_fault = 0
 
         self.cjk = apply_cjk_font(self)
         self._build_ui(initial_port)
@@ -396,6 +397,7 @@ class App(tk.Tk):
             self.link = None
         self.connected = False
         self._warned_nodata = False
+        self._last_fault = 0
         self.btn_conn.configure(text="连接")
         self.lbl_status.configure(text="未连接", foreground="#a00")
         self._log("[disconnected]")
@@ -501,6 +503,20 @@ class App(tk.Tk):
         ft = FAULT_NAMES.get(d["fault"], f"?{d['fault']}")
         colour = "#c00" if d["fault"] else "#060"
         self.lbl_big.configure(text=f"state {st:<10}  fault {ft}", foreground=colour)
+        # Make a trip impossible to miss: the fault path decelerates gently, so
+        # a protection trip looks like a normal slow stop otherwise.
+        if d["fault"] != 0 and d["fault"] != self._last_fault:
+            self._last_fault = d["fault"]
+            msg = ("过流保护动作\n\n母线电流超过 2.5 A（或瞬时 4 A）。\n"
+                   if d["fault"] == 1 else
+                   "堵转 / 失步保护动作\n\n电流指令持续顶在限幅上 400 ms，\n"
+                   "说明转子跟不上（负载过大、失步或参数不对）。\n")
+            self._log(f"!! 保护动作: {ft} (fault={d['fault']})")
+            self.bell()
+            messagebox.showwarning(f"保护动作 — {ft}",
+                                   msg + "\n电机会受控减速停车。")
+        if d["fault"] == 0:
+            self._last_fault = 0
         for k, lbl in self.readout.items():
             lbl.configure(text=f"{d[k]:.3f}" if k in ("id", "iq") else f"{d[k]:.2f}")
 
