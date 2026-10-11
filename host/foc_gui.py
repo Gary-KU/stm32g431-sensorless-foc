@@ -29,8 +29,34 @@ from tkinter import ttk, messagebox
 
 import matplotlib
 matplotlib.use("TkAgg")
+# Chinese font: the default DejaVu Sans has no CJK glyphs, which makes every
+# Chinese label render as a tofu box.  Pick the first available CJK-capable
+# family shipped with Windows.
+matplotlib.rcParams["font.sans-serif"] = [
+    "Microsoft YaHei", "SimHei", "SimSun", "DejaVu Sans"]
+matplotlib.rcParams["axes.unicode_minus"] = False
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+import tkinter.font as tkfont
+
+
+def apply_cjk_font(root):
+    """Give every tk default font a CJK-capable family."""
+    import tkinter.font as _f
+    have = set(_f.families(root))
+    fam = next((c for c in ("Microsoft YaHei UI", "Microsoft YaHei",
+                            "SimHei", "SimSun") if c in have), None)
+    if fam is None:
+        return None
+    for name in ("TkDefaultFont", "TkTextFont", "TkMenuFont",
+                 "TkHeadingFont", "TkTooltipFont", "TkCaptionFont",
+                 "TkSmallCaptionFont", "TkIconFont"):
+        try:
+            _f.nametofont(name, root=root).configure(family=fam)
+        except Exception:
+            pass
+    return fam
 
 # ----------------------------------------------------------------- constants
 
@@ -148,6 +174,7 @@ class App(tk.Tk):
         self.connected = False
         self.t_last = time.time()
 
+        self.cjk = apply_cjk_font(self)
         self._build_ui(initial_port)
         self.after(50, self._pump)
 
