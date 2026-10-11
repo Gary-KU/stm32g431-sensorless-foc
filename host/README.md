@@ -56,10 +56,11 @@ $P,<参数名>,<值>\r\n                                   参数设置确认
 
 | 名 | 全局量 | 说明 |
 | --- | --- | --- |
+| `runms` | g_foc_run_ms | 自动停机时间 (ms)，**0 = 不自动停**。固件默认 30000 |
 | `rs` `ls` | g_foc_rs_ohm / g_foc_ls_h | 定子电阻 / 电感 |
 | `pllki` | g_foc_pll_ki | 观测器 PLL 积分增益 |
 | `thetaoff` | g_foc_thetaoff_sf | 角度补偿系数 |
-| `force` | g_foc_speed_force_hz | 闭环切换点 (Hz)，0=用编译默认(25) |
+| `force` | g_foc_speed_force_hz | 闭环切换点 (Hz)，0=用编译默认(33) |
 | `decel` | g_foc_stop_decel_hzps | 停机减速率 (Hz/s) |
 | `octrip` `ocinst` | g_foc_oc_trip_a / oc_inst_a | 过流阈值 (A) |
 | `stallms` | g_foc_stall_ms | 堵转判定时间 (ms)，0=关 |

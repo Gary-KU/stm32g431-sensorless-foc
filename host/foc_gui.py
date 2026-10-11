@@ -41,8 +41,11 @@ STATE_NAMES = {
 FAULT_NAMES = {0: "-", 1: "OVERCURRENT", 2: "STALL/SYNC"}
 
 HIST = 600                      # samples kept for the plots (~12 s at 50 Hz)
-PARAMS = ["rs", "ls", "pllki", "force", "decel", "fw", "fwgain", "fwmax",
-          "mtpa", "obs", "psi", "ld", "lq", "dt", "stallms", "period"]
+# Names accepted by the firmware's "P <name> <value>" command (see foc_serial.c).
+PARAMS = ["rs", "ls", "pllki", "thetaoff", "force", "accel", "starti", "decel",
+          "octrip", "ocinst", "stallms", "runms", "fw", "fwgain", "fwmax",
+          "obs", "fluxwc", "fluxkp", "fluxki", "psi", "mtpa", "ld", "lq",
+          "dt", "dtith", "spdfb", "hoerr", "period"]
 
 
 def list_com_ports():
@@ -201,8 +204,8 @@ class App(tk.Tk):
         pf = ttk.LabelFrame(left, text="参数 (P <名> <值>)", padding=6)
         pf.pack(fill=tk.X, pady=(10, 2))
         self.param_vars = {}
-        quick = [("force", "闭环切换点 Hz"), ("fw", "弱磁 0/1"),
-                 ("mtpa", "MTPA 0/1"), ("pllki", "PLL Ki")]
+        quick = [("runms", "自动停机 ms"), ("force", "闭环切换点 Hz"),
+                 ("fw", "弱磁 0/1"), ("mtpa", "MTPA 0/1"), ("pllki", "PLL Ki")]
         for i, (name, label) in enumerate(quick):
             ttk.Label(pf, text=label, width=16).grid(row=i, column=0,
                                                      sticky="w", pady=1)
@@ -315,7 +318,13 @@ class App(tk.Tk):
         self.connected = True
         self.btn_conn.configure(text="断开")
         self.lbl_status.configure(text=f"已连接 {port}", foreground="#080")
-        self._log(f"[connected to {port}]")
+        # The firmware auto-stops after g_foc_run_ms (default 30 s) as a safety
+        # net for unattended runs.  From the GUI the user expects the motor to
+        # keep running until Stop is pressed, so disable that limit on connect.
+        # Set a limit again with the 'runms' parameter (ms, 0 = no limit).
+        self.link.send("P runms 0")
+        self._log(f"[connected to {port}  -  run_ms limited disabled]")
+        self._log("[hint] 'runms' 参数可设自动停机时间(ms), 0=不自动停")
 
     def _disconnect(self):
         if self.link:
