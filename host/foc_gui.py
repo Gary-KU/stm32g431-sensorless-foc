@@ -364,13 +364,28 @@ class App(tk.Tk):
 
     # -------------------------------------------------------------- commands
     def _send(self, cmd):
-        if self.connected and self.link:
-            self.link.send(cmd)
-            self._log(f">> {cmd}")
+        if not self.connected or not self.link:
+            self._log(f"!! 未连接，指令未发送: {cmd}")
+            return
+        self.link.send(cmd)
+        self._log(f">> {cmd}")
 
     def _do_run(self, direction=+1):
-        hz = abs(float(self.var_spd.get())) * (1 if direction > 0 else -1)
-        self._send(f"RUN {hz:.2f}")
+        if not self.connected:
+            messagebox.showwarning("未连接",
+                                   "请先点右上角的【连接】按钮。\n\n"
+                                   "串口应选 COM15（独立的 CP210x 模块）。")
+            return
+        try:
+            hz = abs(float(self.var_spd.get()))
+        except (tk.TclError, ValueError):
+            hz = 0.0
+        if hz < 1.0:
+            messagebox.showwarning("转速无效",
+                                   f"目标转速是 {hz:.1f} Hz，请先设置（建议 35~100 Hz）。\n\n"
+                                   "注意：低于 33 Hz 时闭环无法接管，电机会一直停在 I/F 强拖。")
+            return
+        self._send(f"RUN {hz * (1 if direction > 0 else -1):.2f}")
 
     def _do_stop(self):
         self._send("STOP")
