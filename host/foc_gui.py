@@ -75,9 +75,36 @@ PARAMS = ["rs", "ls", "pllki", "thetaoff", "force", "accel", "starti", "decel",
 
 
 def list_com_ports():
+    """List serial ports, real USB-UART adapters first.
+
+    Windows enumerates a pile of Bluetooth virtual ports (and the DAPLink VCP)
+    ahead of the actual USB-TTL adapter, so the naive first entry is usually a
+    dead Bluetooth port.  Sort by usefulness and tag each entry.
+    """
+    def is_bt(p):
+        return "BTHENUM" in (p.hwid or "").upper() or "蓝牙" in (p.description or "")
+
+    def rank(p):
+        hw = (p.hwid or "").upper()
+        if is_bt(p):
+            return 3, p.device            # Bluetooth virtual port: useless here
+        if "0D28" in hw:                  # DAPLink VCP: crashes under load
+            return 2, p.device
+        if "USB" in hw:
+            return 0, p.device            # real USB-UART adapter
+        return 1, p.device
+
     out = []
-    for p in list_ports.comports():
-        tag = "USB" if "USB" in (p.hwid or "") else "   "
+    for p in sorted(list_ports.comports(), key=rank):
+        hw = (p.hwid or "").upper()
+        if is_bt(p):
+            tag = "蓝牙"
+        elif "0D28" in hw:
+            tag = "DAPLink!勿用"
+        elif "USB" in hw:
+            tag = "USB ✓"
+        else:
+            tag = "?"
         out.append((p.device, f"{p.device}  [{tag}] {p.description}"))
     return out
 
@@ -173,6 +200,9 @@ class App(tk.Tk):
                      for k in ("spref", "speed", "id", "iq", "vbus")}
         self.connected = False
         self.t_last = time.time()
+        self._port = None
+        self._rx_since = time.time()
+        self._warned_nodata = False
 
         self.cjk = apply_cjk_font(self)
         self._build_ui(initial_port)
@@ -308,13 +338,16 @@ class App(tk.Tk):
         ports = list_com_ports()
         self._ports = ports
         self.cmb_port["values"] = [d for _, d in ports]
-        pick = select or (ports[0][0] if ports else None)
-        for dev, desc in ports:
-            if dev == pick:
-                self.cmb_port.set(desc)
-                break
-        if ports and not select:
-            self.cmb_port.current(0)
+        if not ports:
+            return
+        # Prefer an explicit request, else the first real USB-UART adapter
+        # (the list is already sorted with those first).
+        want = select or ports[0][0]
+        for i, (dev, _) in enumerate(ports):
+            if dev == want:
+                self.cmb_port.current(i)
+                return
+        self.cmb_port.current(0)
 
     def _selected_port(self):
         i = self.cmb_port.current()
@@ -344,7 +377,11 @@ class App(tk.Tk):
             return
         self.connected = True
         self.btn_conn.configure(text="断开")
-        self.lbl_status.configure(text=f"已连接 {port}", foreground="#080")
+        self.lbl_status.configure(text=f"已连接 {port} (等待数据...)",
+                                  foreground="#c80")
+        self._port = port
+        self._rx_since = time.time()
+        self._warned_nodata = False
         # The firmware auto-stops after g_foc_run_ms (default 30 s) as a safety
         # net for unattended runs.  From the GUI the user expects the motor to
         # keep running until Stop is pressed, so disable that limit on connect.
@@ -358,6 +395,7 @@ class App(tk.Tk):
             self.link.close()
             self.link = None
         self.connected = False
+        self._warned_nodata = False
         self.btn_conn.configure(text="连接")
         self.lbl_status.configure(text="未连接", foreground="#a00")
         self._log("[disconnected]")
@@ -423,14 +461,30 @@ class App(tk.Tk):
                 while True:
                     d = self.link.rx.get_nowait()
                     got = True
+                    self._rx_since = time.time()
                     for k in ("spref", "speed"):
                         self.hist[k].append(d[k])
                     self.hist["id"].append(d["id"])
                     self.hist["iq"].append(d["iq"])
                     self.hist["vbus"].append(d["vbus"])
                     self._update_readouts(d)
+                if got and not self._warned_nodata:
+                    self.lbl_status.configure(text=f"已连接 {self._port}",
+                                              foreground="#080")
             except queue.Empty:
                 pass
+            # no telemetry arriving -> almost always the wrong COM port
+            if not self._warned_nodata and (time.time() - self._rx_since) > 4.0:
+                self._warned_nodata = True
+                self.lbl_status.configure(text=f"{self._port} 无数据 ✗",
+                                          foreground="#a00")
+                self._log(f"!! {self._port} 收不到遥测 —— 多半选错串口了")
+                messagebox.showwarning(
+                    "收不到数据",
+                    f"{self._port} 已打开但 4 秒内没有任何遥测帧。\n\n"
+                    "请断开，在下拉框里选带 [USB ✓] 标记的那个\n"
+                    "（你的板子是 Silicon Labs CP210x，即 COM15）。\n\n"
+                    "别选 [蓝牙] 或 [DAPLink!勿用]。")
             # events
             try:
                 while True:
