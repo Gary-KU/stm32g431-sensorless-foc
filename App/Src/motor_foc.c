@@ -570,14 +570,21 @@ void MotorFOC_Loop1ms(void)
       }
       g_foc_log_idx++;
     }
-    /* live speed change: keep the trajectory target in sync with the command */
-    if (MOTOR_vars.motorState >= MOTOR_CL_RUNNING) {
-      MOTOR_vars.trajHandle_spd.maxDelta =
-          ((g_foc_accel_max_hzps > 0.0f) ? g_foc_accel_max_hzps
-                                         : MOTOR_vars.accelerationMax_Hzps) *
-          MOTOR_vars.ctrlPeriod_sec;
+    /* Live speed change: the trajectory target must follow the command in
+     * EVERY running state.  It used to be updated only once the loop was
+     * closed, so a setpoint change made while the motor was still in the I/F
+     * ramp was silently ignored -- e.g. RUN 8 then S 120 left the motor
+     * spinning at 8 Hz for ever because the trajectory never reached the
+     * 33 Hz hand-over speed. */
+    if (MOTOR_vars.flagRunIdentAndOnLine == true) {
       MOTOR_vars.trajHandle_spd.targetValue =
           (MOTOR_vars.direction > 0.0f) ? g_foc_speed_ref_hz : -g_foc_speed_ref_hz;
+      if (MOTOR_vars.motorState >= MOTOR_CL_RUNNING) {
+        MOTOR_vars.trajHandle_spd.maxDelta =
+            ((g_foc_accel_max_hzps > 0.0f) ? g_foc_accel_max_hzps
+                                           : MOTOR_vars.accelerationMax_Hzps) *
+            MOTOR_vars.ctrlPeriod_sec;
+      }
     }
     if (g_foc_run_ms > 0 && (int32_t)(now - run_start_ms) > g_foc_run_ms) {
       if (stop_req == 0U) { stop_req = 1U; stop_start_ms = now; }
