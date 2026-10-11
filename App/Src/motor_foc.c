@@ -96,6 +96,7 @@ volatile float    g_foc_imax_a = 0.0f;
 volatile uint32_t g_foc_fault = 0U;
 volatile int32_t  g_foc_stall_ms = 400;
 volatile float    g_foc_stop_decel_hzps = 30.0f;
+volatile float    g_foc_accel_max_hzps = 0.0f;   /* 0 = use compiled default */
 static uint32_t stall_cnt = 0;
 static uint8_t  stop_req = 0;
 static uint32_t stop_start_ms = 0;
@@ -528,9 +529,18 @@ void MotorFOC_Loop1ms(void)
     /* ---- stall / loss-of-sync protection --------------------------------
      * Once the speed loop is closed, a current reference pinned at the limit
      * for longer than g_foc_stall_ms means the rotor cannot follow (stall,
-     * wrong commutation, mechanical jam): stop before it overheats. */
+     * wrong commutation, mechanical jam): stop before it overheats.
+     *
+     * Only evaluate this once the trajectory has SETTLED on its target: while a
+     * speed change is still ramping the speed loop legitimately saturates (that
+     * is how it accelerates), which used to be mistaken for a stall -- so
+     * changing the speed made the motor "slowly stop" as the trip engaged. */
     if (MOTOR_vars.motorState >= MOTOR_CL_RUNNING && g_foc_fault == 0U) {
-      if (fabsf(MOTOR_vars.IsRef_A) > 0.9f * MOTOR_vars.maxCurrent_A) {
+      float traj_err = fabsf(MOTOR_vars.trajHandle_spd.intValue -
+                             MOTOR_vars.trajHandle_spd.targetValue);
+      if (traj_err > 1.0f) {
+        stall_cnt = 0U;                        /* still ramping, not a stall */
+      } else if (fabsf(MOTOR_vars.IsRef_A) > 0.9f * MOTOR_vars.maxCurrent_A) {
         if (stall_cnt < 10000U) stall_cnt++;
         if (g_foc_stall_ms > 0 && stall_cnt > (uint32_t)g_foc_stall_ms) {
           g_foc_fault = 2U;
@@ -563,7 +573,9 @@ void MotorFOC_Loop1ms(void)
     /* live speed change: keep the trajectory target in sync with the command */
     if (MOTOR_vars.motorState >= MOTOR_CL_RUNNING) {
       MOTOR_vars.trajHandle_spd.maxDelta =
-          MOTOR_vars.accelerationMax_Hzps * MOTOR_vars.ctrlPeriod_sec;
+          ((g_foc_accel_max_hzps > 0.0f) ? g_foc_accel_max_hzps
+                                         : MOTOR_vars.accelerationMax_Hzps) *
+          MOTOR_vars.ctrlPeriod_sec;
       MOTOR_vars.trajHandle_spd.targetValue =
           (MOTOR_vars.direction > 0.0f) ? g_foc_speed_ref_hz : -g_foc_speed_ref_hz;
     }

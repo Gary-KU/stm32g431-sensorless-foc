@@ -98,6 +98,11 @@ extern volatile uint32_t g_foc_spd_fb_filter;
  * flaky).  0 disables the gate. */
 extern volatile float    g_foc_handover_errmax;
 
+/* Run-time override for the commanded speed-change rate (Hz/s).  0 = use the
+ * compiled default (USER_MOTOR1_ACCEL_MAX_Hzps).  Applies to both accelerating
+ * and decelerating towards a new speed reference. */
+extern volatile float    g_foc_accel_max_hzps;
+
 /* ISR cycle budget measurement (DWT cycle counter). */
 extern volatile uint32_t g_foc_isr_cycles;      /* last ISR */
 extern volatile uint32_t g_foc_isr_cycles_max;  /* worst seen */

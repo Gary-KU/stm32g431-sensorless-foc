@@ -172,10 +172,10 @@ extern "C"
 // the acceleration for start the motor, in Hz/s.
 // Controls the I/F (forced) ramp rate up to USER_MOTOR1_SPEED_FORCE_Hz, so it
 // directly sets the start-up time: 33 Hz / 4 Hz per s ~= 8 s (+2 s align).
-#define USER_MOTOR1_ACCEL_START_Hzps       (2.0f)          // Hz/s
+#define USER_MOTOR1_ACCEL_START_Hzps       (3.0f)          // Hz/s
 
 // the maximum acceleration for running the motor, in Hz/s
-#define USER_MOTOR1_ACCEL_MAX_Hzps         (4.0f)          // Hz/s
+#define USER_MOTOR1_ACCEL_MAX_Hzps         (8.0f)          // Hz/s
 
 //! \brief Defines maximum acceleration for the estimation speed profiles, Hz/sec
 //!

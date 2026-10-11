@@ -100,6 +100,7 @@ static const Param_t g_params[] = {
   { "thetaoff", (void *)&g_foc_thetaoff_sf,      0U },
   { "force",    (void *)&g_foc_speed_force_hz,   0U },
   { "accel",    (void *)&g_foc_accel_start_hzps, 0U },
+  { "accmax",   (void *)&g_foc_accel_max_hzps,   0U },
   { "starti",   (void *)&g_foc_start_current_a,  0U },
   { "spdfb",    (void *)&g_foc_spd_fb_filter,    1U },
   { "hoerr",    (void *)&g_foc_handover_errmax, 0U },
