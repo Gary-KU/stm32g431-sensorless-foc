@@ -175,7 +175,7 @@ extern "C"
 #define USER_MOTOR1_ACCEL_START_Hzps       (3.0f)          // Hz/s
 
 // the maximum acceleration for running the motor, in Hz/s
-#define USER_MOTOR1_ACCEL_MAX_Hzps         (8.0f)          // Hz/s
+#define USER_MOTOR1_ACCEL_MAX_Hzps         (20.0f)          // Hz/s
 
 //! \brief Defines maximum acceleration for the estimation speed profiles, Hz/sec
 //!

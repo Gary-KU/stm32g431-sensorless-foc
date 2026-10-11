@@ -262,7 +262,8 @@ class App(tk.Tk):
         pf = ttk.LabelFrame(left, text="参数 (P <名> <值>)", padding=6)
         pf.pack(fill=tk.X, pady=(10, 2))
         self.param_vars = {}
-        quick = [("runms", "自动停机 ms"), ("force", "闭环切换点 Hz"),
+        quick = [("runms", "自动停机 ms"), ("accmax", "加减速 Hz/s"),
+                 ("accel", "启动斜坡 Hz/s"), ("force", "闭环切换点"),
                  ("fw", "弱磁 0/1"), ("mtpa", "MTPA 0/1"), ("pllki", "PLL Ki")]
         for i, (name, label) in enumerate(quick):
             ttk.Label(pf, text=label, width=16).grid(row=i, column=0,
